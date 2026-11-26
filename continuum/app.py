@@ -92,6 +92,10 @@ def upload():
 @app.get('/api/template')
 def template():
     return Response('customer_id,'+','.join(FEATURES)+'\nexample-1,18,240,1,3,6,1150,5520,13800,2300\n',mimetype='text/csv',headers={'Content-Disposition':'attachment; filename=loyaltics_template.csv'})
+@app.get('/fintech-evaluation.json')
+def fintech_evaluation():return send_from_directory(ROOT/'public','fintech-evaluation.json')
+@app.get('/fintech-template.csv')
+def fintech_template():return send_from_directory(ROOT/'public','fintech-template.csv',as_attachment=True,download_name='loyaltics_transactions.csv')
 @app.get('/api/fintech/default')
 def fintech_default():
     from fintech_inference import default_payload, ROOT
@@ -104,7 +108,14 @@ def fintech_score():
     try:
         file=request.files.get('file')
         if not file:raise ValueError('Select a transaction CSV.')
-        return jsonify(score_transactions(pd.read_csv(file,dtype={'customer_id':str})))
+        raw=pd.read_csv(file,dtype={'customer_id':str})
+        if request.form.get('single')=='1' and ('customer_id' not in raw or raw.customer_id.nunique()!=1):raise ValueError('Supply exactly one customer reference.')
+        currency=request.form.get('currency','COP')
+        if currency not in ('COP','ZAR'):raise ValueError('Select COP or ZAR.')
+        if currency=='ZAR':
+            if 'amount' not in raw:raise ValueError('Missing amount column.')
+            raw['amount']=pd.to_numeric(raw.amount,errors='raise')/0.0045
+        return jsonify(score_transactions(raw))
     except (ValueError,TypeError,pd.errors.ParserError) as e:return jsonify(error=str(e)),400
 @app.errorhandler(413)
 def too_large(e):return jsonify(error='File too large. Maximum request size is 2 MB.'),413

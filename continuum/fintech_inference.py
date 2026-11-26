@@ -23,7 +23,9 @@ def score_features(d):
     out=pd.DataFrame({'customer_id':d.customer_id.astype(str),'risk':p,'flagged':p>=b['threshold'],'turnover_cop':v[b['turnover_choice']],'segment':b['segment'].predict(np.log1p(x.clip(lower=0)))+1,'recency':x.recency.to_numpy(),'last30_cop':x.volume_30.to_numpy()})
     return {'customers':out.round(6).to_dict('records'),'threshold':b['threshold'],'currency':'COP','horizon_days':30}
 def default_payload():
-    return score_features(pd.read_csv(ROOT/'default.csv',dtype={'customer_id':str}))
+    result=score_features(pd.read_csv(ROOT/'default.csv',dtype={'customer_id':str}))
+    result['as_of']='2023-12-29'
+    return result
 def score_transactions(raw):
     needed=['customer_id','date','amount','type']
     if not set(needed)<=set(raw):raise ValueError('Required columns: customer_id, date, amount, type')
