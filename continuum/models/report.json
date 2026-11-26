@@ -1,0 +1,53 @@
+{
+  "selected_model": "Extra trees",
+  "validation": {
+    "Logistic regression": {
+      "pr_auc": 0.8275903889475602,
+      "brier": 0.2611960378111868
+    },
+    "Random forest": {
+      "pr_auc": 0.8269293360971327,
+      "brier": 0.24994004415449822
+    },
+    "Extra trees": {
+      "pr_auc": 0.8310152444228796,
+      "brier": 0.2455298107123302
+    },
+    "Histogram gradient boosting": {
+      "pr_auc": 0.8293644100540609,
+      "brier": 0.2596532224686266
+    }
+  },
+  "test": {
+    "pr_auc": 0.7471059490176002,
+    "roc_auc": 0.7577937370801201,
+    "brier": 0.21271796567732268,
+    "precision": 0.639212175470009,
+    "recall": 0.8992443324937027,
+    "f1": 0.7472527472527473,
+    "prevalence": 0.5208265004919646,
+    "baseline_pr_auc": 0.5208265004919646,
+    "baseline_brier": 0.25541504485124317,
+    "future_revenue_mae_gbp": 422.0860225486561,
+    "future_revenue_baseline_mae_gbp": 383.4952020334536
+  },
+  "train_rows": 13989,
+  "validation_rows": 3415,
+  "test_rows": 3049,
+  "train_dates": [
+    "2010-06-01",
+    "2010-07-01",
+    "2010-08-01",
+    "2010-09-01",
+    "2010-10-01"
+  ],
+  "validation_date": "2011-01-01",
+  "test_date": "2011-05-01",
+  "demo_date": "2011-09-01",
+  "demo_rows": 2772,
+  "dataset_url": "https://archive.ics.uci.edu/dataset/502/online+retail+ii",
+  "license": "CC BY 4.0",
+  "target": "No positive purchase in following 90 days",
+  "currency": "GBP",
+  "limitations": "Historical single retailer; repeat customers can appear in different time snapshots; no randomized campaign data; conditional revenue is a log-scale model estimate, not audited cash flow."
+}
