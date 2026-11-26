@@ -4,7 +4,7 @@ on:
     branches: [loyaltics-vercel]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -24,6 +24,7 @@ jobs:
       - name: API and static interface tests
         run: |
           pip install -r requirements.txt pytest==8.3.5
+          OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python prepare_demo.py
           OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m pytest -q
           node --check public/static/app.js
       - name: Browser interaction tests
@@ -31,3 +32,12 @@ jobs:
           pip install playwright==1.52.0
           python -m playwright install --with-deps chromium
           OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python tests/browser_motion.py
+      - name: Publish static example snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/demo.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish pre-scored Loyaltics example portfolio"
+            git push origin HEAD:loyaltics-vercel
+          fi

@@ -23,7 +23,9 @@ try:
         page.on('pageerror',lambda e:errors.append(str(e)))
         page.on('request',lambda req:requests.append(req.url) if '/api/' in req.url else None)
         page.goto(url)
-        expect(page.locator('#welcome')).to_be_visible()
+        expect(page.locator('#status')).to_have_text('2,772 customers',timeout=90000)
+        expect(page.locator('#kpis .kpi strong').first).to_have_text('2,772')
+        expect(page.locator('#kpis .kpi strong').nth(2)).to_contain_text('R')
         expect(page.locator('nav')).to_have_class('ink-ready')
         assert not requests,requests
         before=page.locator('.nav-ink').evaluate('(e)=>getComputedStyle(e).transform')
@@ -49,7 +51,7 @@ try:
         page.locator('#demo').click()
         expect(page.locator('#status')).to_have_text('2,772 customers',timeout=90000)
         expect(page.locator('#kpis .kpi strong').first).to_have_text('2,772')
-        assert len(requests)==2,requests
+        assert len(requests)==1,requests
         for width in [320,390,768,1024,1440]:
             page.set_viewport_size({'width':width,'height':900})
             for v in ['overview','customers','segments','campaign']:
@@ -57,7 +59,7 @@ try:
                 expect(page.locator('#'+v)).to_be_visible()
                 page.wait_for_timeout(450)
                 assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),(width,v)
-        assert len(requests)==2,requests
+        assert len(requests)==1,requests
         page.emulate_media(reduced_motion='reduce')
         page.locator('[data-view="overview"]').click()
         expect(page.locator('#overview')).to_be_visible()

@@ -10,6 +10,9 @@ ROOT=Path(__file__).resolve().parent
 app=Flask(__name__,static_folder='public/static', static_url_path='/static')
 app.config['MAX_CONTENT_LENGTH']=2*1024*1024
 FEATURES=['recency','tenure','orders_30','orders_90','orders_180','spend_30','spend_90','spend_180','avg_order_180']
+ZAR_PER_GBP=23.0  # Fixed illustrative conversion, not a live exchange rate.
+MONEY_FEATURES=['spend_30','spend_90','spend_180','avg_order_180']
+MONEY_OUTPUTS=MONEY_FEATURES+['potential_value','expected_revenue','revenue_at_risk']
 BUNDLE=None
 REPORT=None
 DEMO=None
@@ -54,8 +57,17 @@ def score(d, explain=False):
         a=np.array(effects).T; idx=a.argmax(axis=1)
         d['driver']=[FEATURES[i] if a[j,i]>0 else 'No positive median-replacement effect' for j,i in enumerate(idx)]
     return d
+def zar_payload(d, source, as_of=None):
+    d=d.copy()
+    for c in MONEY_OUTPUTS: d[c]=d[c]*ZAR_PER_GBP
+    return dict(as_of=as_of,currency='ZAR',fx_zar_per_gbp=ZAR_PER_GBP,fx_type='fixed illustrative conversion',source=source,customers=d.round(5).to_dict('records'))
+def demo_payload():
+    load()
+    return zar_payload(score(DEMO,True),'Historical UK retail example',REPORT['demo_date'])
 @app.get('/')
 def home():return send_from_directory(ROOT/'public','index.html')
+@app.get('/demo.json')
+def static_demo():return send_from_directory(ROOT/'public','demo.json')
 @app.get('/template.csv')
 def static_template():return send_from_directory(ROOT/'public','template.csv',as_attachment=True,download_name='loyaltics_template.csv')
 @app.get('/health')
@@ -64,21 +76,21 @@ def health():
     except (OSError,ValueError):return jsonify(ready=False),503
 @app.get('/api/demo')
 def demo():
-    load()
-    return jsonify(as_of=REPORT['demo_date'],currency='GBP',source='Historical retail example',customers=score(DEMO,True).round(5).to_dict('records'))
+    return jsonify(demo_payload())
 @app.post('/api/score')
 def upload():
     try:
         file=request.files.get('file')
         if not file:raise ValueError('Select a CSV file.')
-        d=pd.read_csv(file,dtype={'customer_id':str})
-        response=jsonify(as_of=None,currency='GBP',source='Imported customer features',customers=score(d,True).round(5).to_dict('records'))
+        d=validate(pd.read_csv(file,dtype={'customer_id':str}))
+        for c in MONEY_FEATURES: d[c]=d[c]/ZAR_PER_GBP
+        response=jsonify(zar_payload(score(d,True),'Imported customer features (ZAR)'))
         if len(response.get_data())>4_000_000:return jsonify(error='Scored output is too large. Split the CSV into smaller batches.'),413
         return response
     except (ValueError,TypeError,pd.errors.ParserError) as e:return jsonify(error=str(e)),400
 @app.get('/api/template')
 def template():
-    return Response('customer_id,'+','.join(FEATURES)+'\nexample-1,18,240,1,3,6,50,240,600,100\n',mimetype='text/csv',headers={'Content-Disposition':'attachment; filename=loyaltics_template.csv'})
+    return Response('customer_id,'+','.join(FEATURES)+'\nexample-1,18,240,1,3,6,1150,5520,13800,2300\n',mimetype='text/csv',headers={'Content-Disposition':'attachment; filename=loyaltics_template.csv'})
 @app.errorhandler(413)
 def too_large(e):return jsonify(error='File too large. Maximum request size is 2 MB.'),413
 @app.after_request
