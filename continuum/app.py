@@ -92,6 +92,20 @@ def upload():
 @app.get('/api/template')
 def template():
     return Response('customer_id,'+','.join(FEATURES)+'\nexample-1,18,240,1,3,6,1150,5520,13800,2300\n',mimetype='text/csv',headers={'Content-Disposition':'attachment; filename=loyaltics_template.csv'})
+@app.get('/api/fintech/default')
+def fintech_default():
+    from fintech_inference import default_payload, ROOT
+    if not (ROOT/'bundle.joblib').exists():return jsonify(error='Fintech candidate not released.'),503
+    return jsonify(default_payload())
+@app.post('/api/fintech/score')
+def fintech_score():
+    from fintech_inference import score_transactions, ROOT
+    if not (ROOT/'bundle.joblib').exists():return jsonify(error='Fintech candidate not released.'),503
+    try:
+        file=request.files.get('file')
+        if not file:raise ValueError('Select a transaction CSV.')
+        return jsonify(score_transactions(pd.read_csv(file,dtype={'customer_id':str})))
+    except (ValueError,TypeError,pd.errors.ParserError) as e:return jsonify(error=str(e)),400
 @app.errorhandler(413)
 def too_large(e):return jsonify(error='File too large. Maximum request size is 2 MB.'),413
 @app.after_request

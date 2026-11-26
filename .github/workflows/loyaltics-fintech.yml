@@ -5,9 +5,11 @@ on:
     branches: [loyaltics-vercel]
     paths:
       - continuum/train_fintech.py
+      - continuum/fintech_features.py
+      - continuum/fintech_inference.py
       - .github/workflows/loyaltics-fintech.yml
 permissions:
-  contents: read
+  contents: write
 jobs:
   train:
     runs-on: ubuntu-latest
@@ -32,4 +34,30 @@ jobs:
           path: |
             continuum/challenger_artifacts/report.json
             continuum/challenger_artifacts/bundle.joblib
+            continuum/challenger_artifacts/default.csv
           if-no-files-found: error
+      - name: Publish evaluation and gate approved model
+        run: |
+          python - <<'PY'
+          import json, shutil
+          from pathlib import Path
+          p=Path('challenger_artifacts')
+          r=json.loads((p/'report.json').read_text())
+          shutil.copy(p/'report.json','public/fintech-evaluation.json')
+          if r['release_gate']:
+              dst=Path('models/fintech');dst.mkdir(parents=True,exist_ok=True)
+              for name in ('bundle.joblib','default.csv'):shutil.copy(p/name,dst/name)
+              from fintech_inference import default_payload
+              d=default_payload()
+              assert len(d['customers'])==1000
+              assert all(0<=x['risk']<=1 and x['turnover_cop']>=0 for x in d['customers'])
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/fintech-evaluation.json
+          if [ -d models/fintech ]; then git add models/fintech; fi
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish fintech evaluation and approved inference assets"
+            git pull --rebase origin loyaltics-vercel
+            git push origin HEAD:loyaltics-vercel
+          fi
