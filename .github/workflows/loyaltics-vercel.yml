@@ -26,3 +26,8 @@ jobs:
           pip install -r requirements.txt pytest==8.3.5
           OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m pytest -q
           node --check public/static/app.js
+      - name: Browser interaction tests
+        run: |
+          pip install playwright==1.52.0
+          python -m playwright install --with-deps chromium
+          OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python tests/browser_motion.py
