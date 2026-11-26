@@ -1,0 +1,35 @@
+name: Loyaltics fintech challenger training
+on:
+  workflow_dispatch:
+  push:
+    branches: [loyaltics-vercel]
+    paths:
+      - continuum/train_fintech.py
+      - .github/workflows/loyaltics-fintech.yml
+permissions:
+  contents: read
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: continuum
+    env:
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.txt lightgbm==4.6.0 xgboost==3.0.2 catboost==1.2.8
+      - run: python -m py_compile train_fintech.py
+      - run: python train_fintech.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: loyaltics-fintech-validated-candidate
+          path: |
+            continuum/challenger_artifacts/report.json
+            continuum/challenger_artifacts/bundle.joblib
+          if-no-files-found: error
