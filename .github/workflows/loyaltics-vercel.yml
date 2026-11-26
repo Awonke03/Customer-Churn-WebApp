@@ -32,12 +32,12 @@ jobs:
           pip install playwright==1.52.0
           python -m playwright install --with-deps chromium
           OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python tests/browser_motion.py
-      - name: Publish static example snapshot
+      - name: Publish static default snapshot
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/demo.json
           if ! git diff --cached --quiet; then
-            git commit -m "Publish pre-scored Loyaltics example portfolio"
+            git commit -m "Publish pre-scored Loyaltics default portfolio"
             git push origin HEAD:loyaltics-vercel
           fi
