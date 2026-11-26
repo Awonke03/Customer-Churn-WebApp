@@ -1,10 +1,11 @@
-import io,sys
+import io,sys,json
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from app import app
 def test_fintech_production():
     c=app.test_client()
-    r=c.get('/fintech-evaluation.json').get_json()
+    r=json.loads((Path(__file__).resolve().parents[1]/'research'/'fintech-evaluation.json').read_text())
+    assert c.get('/fintech-evaluation.json').status_code==404
     assert r['release_gate'] and r['n_features']==59 and r['test']['recall']>=.35
     d=c.get('/api/fintech/default').get_json()
     assert len(d['customers'])==1000 and d['horizon_days']==30

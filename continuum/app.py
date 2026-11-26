@@ -92,8 +92,6 @@ def upload():
 @app.get('/api/template')
 def template():
     return Response('customer_id,'+','.join(FEATURES)+'\nexample-1,18,240,1,3,6,1150,5520,13800,2300\n',mimetype='text/csv',headers={'Content-Disposition':'attachment; filename=loyaltics_template.csv'})
-@app.get('/fintech-evaluation.json')
-def fintech_evaluation():return send_from_directory(ROOT/'public','fintech-evaluation.json')
 @app.get('/fintech-template.csv')
 def fintech_template():return send_from_directory(ROOT/'public','fintech-template.csv',as_attachment=True,download_name='loyaltics_transactions.csv')
 @app.get('/api/fintech/default')

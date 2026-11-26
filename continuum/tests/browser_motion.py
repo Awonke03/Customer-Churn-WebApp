@@ -55,12 +55,13 @@ try:
         expect(page.locator('#status')).to_have_text('1,000 customers',timeout=90000)
         for width in [320,390,768,1024,1440]:
             page.set_viewport_size({'width':width,'height':900})
-            for v in ['overview','customers','segments','campaign','fintech']:
+            for v in ['overview','customers','segments','campaign']:
                 page.locator('[data-view="'+v+'"]').click()
                 expect(page.locator('#'+v)).to_be_visible()
                 page.wait_for_timeout(450)
                 assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),(width,v)
-        expect(page.locator('#fintech-metrics .kpi')).to_have_count(8)
+        expect(page.locator('[data-view]')).to_have_count(4)
+        expect(page.locator('#fintech')).to_have_count(0)
         assert not errors,errors
         browser.close()
 finally:

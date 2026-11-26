@@ -6,7 +6,6 @@ on:
     paths:
       - continuum/train_fintech.py
       - continuum/fintech_features.py
-      - continuum/fintech_inference.py
       - .github/workflows/loyaltics-fintech.yml
 permissions:
   contents: write
@@ -43,7 +42,8 @@ jobs:
           from pathlib import Path
           p=Path('challenger_artifacts')
           r=json.loads((p/'report.json').read_text())
-          shutil.copy(p/'report.json','public/fintech-evaluation.json')
+          Path('research').mkdir(exist_ok=True)
+          shutil.copy(p/'report.json','research/fintech-evaluation.json')
           if r['release_gate']:
               dst=Path('models/fintech');dst.mkdir(parents=True,exist_ok=True)
               for name in ('bundle.joblib','default.csv'):shutil.copy(p/name,dst/name)
@@ -54,7 +54,7 @@ jobs:
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/fintech-evaluation.json
+          git add research/fintech-evaluation.json
           if [ -d models/fintech ]; then git add models/fintech; fi
           if ! git diff --cached --quiet; then
             git commit -m "Publish fintech evaluation and approved inference assets"
