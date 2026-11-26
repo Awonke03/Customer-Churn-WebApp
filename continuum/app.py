@@ -23,6 +23,7 @@ def load():
         with LOAD_LOCK:
             if BUNDLE is None:
                 bundle=joblib.load(ROOT/'models/bundle.joblib')
+                if hasattr(bundle['model'],'n_jobs'): bundle['model'].n_jobs=1
                 REPORT=json.loads((ROOT/'models/report.json').read_text())
                 DEMO=pd.read_csv(ROOT/'models/demo.csv',dtype={'customer_id':str})
                 BUNDLE=bundle
@@ -54,8 +55,8 @@ def score(d, explain=False):
         for c in FEATURES:
             changed=x.copy();changed[c]=b['medians'][c]
             effects.append(p-probability(changed,b))
-        a=np.array(effects).T; idx=a.argmax(axis=1)
-        d['driver']=[FEATURES[i] if a[j,i]>0 else 'No positive median-replacement effect' for j,i in enumerate(idx)]
+        a=np.round(np.array(effects).T,12); idx=a.argmax(axis=1)
+        d['driver']=[FEATURES[i] if a[j,i]>1e-10 else 'No positive median-replacement effect' for j,i in enumerate(idx)]
     return d
 def zar_payload(d, source, as_of=None):
     d=d.copy()
@@ -63,7 +64,7 @@ def zar_payload(d, source, as_of=None):
     return dict(as_of=as_of,currency='ZAR',fx_zar_per_gbp=ZAR_PER_GBP,fx_type='fixed illustrative conversion',source=source,customers=d.round(5).to_dict('records'))
 def demo_payload():
     load()
-    return zar_payload(score(DEMO,True),'Historical UK retail example',REPORT['demo_date'])
+    return zar_payload(score(DEMO,True),'Default portfolio (historical UK retail)',REPORT['demo_date'])
 @app.get('/')
 def home():return send_from_directory(ROOT/'public','index.html')
 @app.get('/demo.json')

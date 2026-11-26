@@ -26,6 +26,9 @@ try:
         expect(page.locator('#status')).to_have_text('2,772 customers',timeout=90000)
         expect(page.locator('#kpis .kpi strong').first).to_have_text('2,772')
         expect(page.locator('#kpis .kpi strong').nth(2)).to_contain_text('R')
+        expect(page.locator('#demo')).to_have_text('Default data')
+        expect(page.locator('#source')).to_contain_text('Default data')
+        assert page.locator('#kpis .kpi').first.evaluate('(el)=>getComputedStyle(el).borderRadius')=='2px'
         expect(page.locator('nav')).to_have_class('ink-ready')
         assert not requests,requests
         before=page.locator('.nav-ink').evaluate('(e)=>getComputedStyle(e).transform')
