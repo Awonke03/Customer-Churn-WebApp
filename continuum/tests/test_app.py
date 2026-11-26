@@ -20,5 +20,16 @@ def test_import():
     assert c.post('/api/score',data={'file':(io.BytesIO(b'bad\n1'),'bad.csv')}).status_code==400
 def test_ui():
     c=app.test_client()
-    assert b'Continuum' in c.get('/').data
+    assert b'Loyaltics' in c.get('/').data
     assert c.get('/static/app.js').status_code==200
+
+def test_static_and_limits():
+    c=app.test_client()
+    assert c.get('/template.csv').status_code==200
+    assert c.get('/').status_code==200
+    assert c.get('/static/icon.svg').status_code==200
+    template=c.get('/api/template').data.decode().splitlines()
+    records=[template[0]]+[template[1].replace('example-1','C-'+str(i)) for i in range(3001)]
+    assert c.post('/api/score',data={'file':(io.BytesIO(('\n'.join(records)).encode()),'too-many.csv')}).status_code==400
+    assert c.post('/api/score',data={'file':(io.BytesIO(b'x'*(2*1024*1024+1)),'large.csv')}).status_code==413
+    assert len(c.get('/api/demo').data)<4_000_000

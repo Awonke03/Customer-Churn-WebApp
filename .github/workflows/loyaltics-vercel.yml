@@ -1,0 +1,28 @@
+name: Loyaltics Vercel readiness
+on:
+  push:
+    branches: [loyaltics-vercel]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: continuum
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Estimate runtime bundle size
+        run: |
+          python -m pip install --no-compile --target /tmp/loyaltics-runtime -r requirements.txt
+          python -c "from pathlib import Path; n=sum(p.stat().st_size for p in Path('/tmp/loyaltics-runtime').rglob('*') if p.is_file())+sum(p.stat().st_size for p in Path('models').rglob('*') if p.is_file())+Path('app.py').stat().st_size; print(f'Uncompressed dependencies and model: {n/1e6:.2f} MB'); assert n<450_000_000"
+      - name: API and static interface tests
+        run: |
+          pip install -r requirements.txt pytest==8.3.5
+          OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python -m pytest -q
+          node --check public/static/app.js
