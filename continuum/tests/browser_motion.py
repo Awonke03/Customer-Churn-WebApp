@@ -81,6 +81,9 @@ try:
         page.locator('[data-view="overview"]').click()
         expect(page.locator('#overview')).to_be_visible()
         assert page.locator('#overview').evaluate('(e)=>e.getAnimations().length')==0
+        page.locator('[data-view="fintech"]').click()
+        expect(page.locator('#fintech')).to_be_visible()
+        expect(page.locator('#fintech-metrics .kpi')).to_have_count(8)
         assert not errors,errors
         browser.close()
 finally:
