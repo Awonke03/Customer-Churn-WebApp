@@ -1,0 +1,47 @@
+name: Continuum offline model training
+on:
+  workflow_dispatch:
+  push:
+    branches: [continuum-render]
+    paths:
+      - 'continuum/Continuum_Training.ipynb'
+      - 'continuum/requirements-training.txt'
+      - '.github/workflows/continuum-training.yml'
+permissions:
+  contents: write
+concurrency:
+  group: continuum-training
+  cancel-in-progress: false
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: continuum
+    env:
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: continuum-render
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements-training.txt
+      - run: jupyter nbconvert --to notebook --execute Continuum_Training.ipynb --output Continuum_Training.executed.ipynb --ExecutePreprocessor.timeout=1200
+      - run: python -m pytest -q
+      - uses: actions/upload-artifact@v4
+        with:
+          name: continuum-trained-model-and-notebook
+          path: |
+            continuum/models/
+            continuum/Continuum_Training.executed.ipynb
+      - name: Publish tested inference files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add models/ Continuum_Training.executed.ipynb
+          git diff --cached --quiet || git commit -m "Publish validated Continuum inference artifacts"
+          git push origin HEAD:continuum-render

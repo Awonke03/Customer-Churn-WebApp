@@ -1,0 +1,5 @@
+-r requirements.txt
+openpyxl==3.1.5
+nbconvert==7.16.6
+ipykernel==6.29.5
+pytest==8.3.5
